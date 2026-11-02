@@ -27,6 +27,20 @@ données démo générées sur l'appareil, import CSV, graphiques, backtests (6 
 de règles « acheter quand… / vendre quand… »), portefeuille avec frontière efficiente. Tout est stocké localement
 dans le navigateur.
 
+L'onglet **Labo IA** cherche automatiquement des stratégies. Il génère des centaines de combinaisons de règles,
+améliore les meilleures par mutations successives, puis vérifie les finalistes de façon honnête :
+
+- sélection uniquement sur les 70 % les plus anciens de l'historique, en exigeant de la régularité sur chaque tiers ;
+- examen sur les 30 % les plus récents, jamais vus pendant la recherche ;
+- comparaison avec l'achat-conservation et avec 300 stratégies au hasard de même exposition ;
+- contrôle sur les autres actifs importés.
+
+Verdict : prometteuse, fragile ou rejetée. Sur des données purement aléatoires, la recherche ne déclare aucune
+stratégie prometteuse ; sur une série contenant un effet réel, elle le retrouve. Aucun backtest ne garantit
+les gains futurs : ces vérifications réduisent le risque de se tromper, elles ne l'annulent pas.
+
+Si l'IA est chargée, une idée en français sert de point de départ à la recherche, et l'IA peut commenter chaque résultat.
+
 L'onglet **Assistant** traduit une stratégie décrite en français en règles testables. Le modèle de langage
 (Qwen2.5 0,5B « léger », environ 300 Mo, ou 1,5B « précis », environ 900 Mo) tourne directement dans le navigateur
 grâce à [WebLLM](https://github.com/mlc-ai/web-llm) et WebGPU : il est téléchargé une fois, mis en cache sur

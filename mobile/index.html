@@ -218,6 +218,27 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
 .ai-state.off { background: var(--down-soft); color: var(--down); }
 .composer { display: flex; flex-direction: column; gap: 10px; }
 .composer textarea { width: 100%; min-width: 0; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; color: var(--text); font: inherit; font-size: 15px; resize: none; }
+
+/* Labo : recherche automatique */
+.lab-warning { background: var(--accent-soft); color: var(--text); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; }
+.cand { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cand-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.cand-head .t { font-weight: 800; font-size: 16px; }
+.verdict-pill { font-size: 12px; font-weight: 700; border-radius: 99px; padding: 4px 10px; white-space: nowrap; }
+.verdict-pill.good { background: var(--up-soft); color: var(--up); }
+.verdict-pill.warn { background: var(--accent-soft); color: var(--accent); }
+.verdict-pill.bad { background: var(--down-soft); color: var(--down); }
+.cand .rule { font-family: var(--font-num); font-size: 12.5px; color: var(--muted); background: var(--raised); border-radius: 10px; padding: 9px 10px; line-height: 1.55; }
+.cand .rule b { color: var(--text); font-family: var(--font-ui); }
+.compare { display: grid; grid-template-columns: minmax(0, 1.1fr) 1fr 1fr; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.compare > span { padding: 7px 9px; border-bottom: 1px solid var(--line); font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
+.compare > span:nth-child(3n + 1) { text-align: left; font-family: var(--font-ui); color: var(--muted); }
+.compare > span.h { font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; color: var(--muted); background: var(--raised); text-transform: uppercase; letter-spacing: .04em; }
+.compare > span:nth-last-child(-n + 3) { border-bottom: 0; }
+.checks { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.checks div { display: grid; grid-template-columns: 20px 1fr; gap: 6px; align-items: start; }
+.checks .ok { color: var(--up); font-weight: 800; } .checks .ko { color: var(--down); font-weight: 800; }
+.ai-note { font-size: 14px; line-height: 1.5; background: var(--raised); border-radius: 10px; padding: 10px 12px; }
 </style>
 
 <div class="app" id="app">
@@ -350,8 +371,23 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
 
     <!-- Assistant -->
     <section class="screen" id="screen-assistant">
+      <div class="card" id="lab">
+        <h2>Trouver une stratégie</h2>
+        <p class="hint">L'application génère et teste des centaines de stratégies sur les 70 % les plus anciens de l'historique, garde les meilleures, puis les vérifie sur les 30 % les plus récents, qu'elles n'ont jamais vus.</p>
+        <label class="field">Actif<select id="lab-asset"></select></label>
+        <div class="lab-warning" id="lab-warning" hidden></div>
+        <label class="field">Idée de départ (facultatif)<input type="text" id="lab-idea" maxlength="300" placeholder="Ex. : acheter les replis dans une tendance haussière"></label>
+        <p class="hint" id="lab-idea-hint">Si l'IA est chargée (plus bas), elle traduit votre idée et la recherche l'améliore.</p>
+        <div class="seg" id="lab-depth">
+          <button data-d="fast" aria-pressed="true">Rapide · 300 essais</button>
+          <button data-d="deep" aria-pressed="false">Poussée · 1 000 essais</button>
+        </div>
+        <div id="lab-progress-wrap" hidden><div class="progress"><div id="lab-bar"></div></div><div class="hint num" id="lab-progress" style="margin-top:6px"></div></div>
+        <button class="btn primary block" id="lab-run">Lancer la recherche</button>
+      </div>
+      <div id="lab-results" style="display:flex;flex-direction:column;gap:14px"></div>
       <div class="card" id="ai-setup">
-        <h2>IA sur l'appareil <span class="ai-state" id="ai-state">Non chargée</span></h2>
+        <h2>Assistant IA <span class="ai-state" id="ai-state">Non chargée</span></h2>
         <p class="hint" id="ai-intro">Décrivez une stratégie en français, l'assistant la traduit en règles d'achat et de vente que vous pouvez tester. Le modèle tourne dans le téléphone grâce à WebGPU : il est téléchargé une seule fois, puis fonctionne hors ligne et rien ne quitte l'appareil.</p>
         <div class="seg" id="ai-model">
           <button data-m="light" aria-pressed="true">Léger · ≈ 300 Mo</button>
@@ -380,7 +416,7 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
     <button data-tab="backtest"><svg viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l3-3 3 2 5-6"/><circle cx="18" cy="7" r="1"/></svg>Backtest</button>
     <button data-tab="portfolio"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>Portefeuille</button>
     <button data-tab="strategies"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>Stratégies</button>
-    <button data-tab="assistant"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Assistant</button>
+    <button data-tab="assistant"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Labo IA</button>
   </nav>
 
   <div class="scrim" id="import-sheet" hidden>
@@ -683,7 +719,7 @@ const saveStrats = () => store.set("stratlab.strategies", customStrats);
 const symbols = () => Object.keys(assets);
 
 /* ============ Navigation ============ */
-const TITLES = { markets: "Marchés", backtest: "Backtest", portfolio: "Portefeuille", strategies: "Stratégies", assistant: "Assistant" };
+const TITLES = { markets: "Marchés", backtest: "Backtest", portfolio: "Portefeuille", strategies: "Stratégies", assistant: "Labo IA" };
 function show(screen, title, back = false) {
   $$(".screen").forEach((s) => s.classList.toggle("active", s.id === `screen-${screen}`));
   $("#title").textContent = title; $("#back-btn").hidden = !back; $("#import-btn").hidden = screen !== "markets";
@@ -948,6 +984,235 @@ $("#st-save").addEventListener("click", () => {
   saveStrats(); state.editing = null; state.bt.strat = ed.id; toast(`« ${ed.name} » enregistrée`); go("backtest"); runBacktest();
 });
 
+/* ============ Labo : recherche automatique de stratégies ============ */
+const lab = { running: false, depth: "fast", results: {} };
+const condCache = new WeakMap();
+function cachedCond(b, c) {
+  let m = condCache.get(b); if (!m) { m = new Map(); condCache.set(b, m); }
+  const key = JSON.stringify(c);
+  if (!m.has(key)) m.set(key, condSeries(b, c));
+  return m.get(key);
+}
+const sliceBars = (b, from, to) => ({ t: b.t.slice(from, to), o: b.o.slice(from, to), h: b.h.slice(from, to), l: b.l.slice(from, to), c: b.c.slice(from, to), v: b.v.slice(from, to) });
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+const pickOne = (r, arr) => arr[Math.floor(r() * arr.length)];
+const ENTRY_TEMPLATES = [
+  (r) => ({ a: { k: "rsi", n: pickOne(r, [2, 3, 5, 7, 14]) }, op: "lt", b: { k: "value", n: pickOne(r, [5, 10, 15, 20, 25, 30, 35]) } }),
+  (r) => ({ a: { k: "close" }, op: "gt", b: { k: "sma", n: pickOne(r, [20, 50, 100, 150, 200]) } }),
+  (r) => ({ a: { k: "close" }, op: "lt", b: { k: "sma", n: pickOne(r, [5, 10, 20]) } }),
+  (r) => ({ a: { k: "close" }, op: "gt", b: { k: "hi", n: pickOne(r, [10, 20, 55, 100]) } }),
+  (r) => { const f = pickOne(r, [5, 10, 20, 50]); return { a: { k: pickOne(r, ["sma", "ema"]), n: f }, op: pickOne(r, ["gt", "xup"]), b: { k: "sma", n: pickOne(r, [100, 150, 200].filter((x) => x > f)) } }; },
+  (r) => ({ a: { k: "mom", n: pickOne(r, [20, 60, 120, 250]) }, op: "gt", b: { k: "value", n: pickOne(r, [0, 5, 10, 20]) } }),
+  (r) => ({ a: { k: "macd" }, op: pickOne(r, ["gt", "xup"]), b: { k: "macdsig" } }),
+  (r) => ({ a: { k: "rsi", n: 14 }, op: "gt", b: { k: "value", n: pickOne(r, [50, 55, 60]) } }),
+];
+const EXIT_TEMPLATES = [
+  (r) => ({ a: { k: "rsi", n: pickOne(r, [2, 5, 14]) }, op: "gt", b: { k: "value", n: pickOne(r, [50, 60, 70, 80]) } }),
+  (r) => ({ a: { k: "close" }, op: "gt", b: { k: "sma", n: pickOne(r, [5, 10, 20]) } }),
+  (r) => ({ a: { k: "close" }, op: "lt", b: { k: "sma", n: pickOne(r, [20, 50, 100, 200]) } }),
+  (r) => ({ a: { k: "close" }, op: "lt", b: { k: "lo", n: pickOne(r, [5, 10, 20, 50]) } }),
+  (r) => ({ a: { k: "macd" }, op: "xdn", b: { k: "macdsig" } }),
+  (r) => ({ a: { k: "mom", n: pickOne(r, [20, 60]) }, op: "lt", b: { k: "value", n: 0 } }),
+];
+function randomStrategy(r) {
+  const count = r() < 0.55 ? 1 : 2; const used = new Set(); const entry = [];
+  while (entry.length < count) { const i = Math.floor(r() * ENTRY_TEMPLATES.length); if (used.has(i)) continue; used.add(i); entry.push(ENTRY_TEMPLATES[i](r)); }
+  return { entry, exit: r() < 0.25 ? [] : [pickOne(r, EXIT_TEMPLATES)(r)] };
+}
+function mutateStrategy(r, s) {
+  const c = JSON.parse(JSON.stringify({ entry: s.entry, exit: s.exit }));
+  const operands = [...c.entry, ...c.exit].flatMap((cond) => [cond.a, cond.b]).filter((o) => o.n !== undefined);
+  if (!operands.length || r() < 0.15) { if (r() < 0.5 && c.exit.length) c.exit = [pickOne(r, EXIT_TEMPLATES)(r)]; else c.exit = r() < 0.3 ? [] : [pickOne(r, EXIT_TEMPLATES)(r)]; return c; }
+  const o = pickOne(r, operands);
+  if (o.k === "value") o.n = Math.max(-50, Math.min(100, o.n + pickOne(r, [-10, -5, 5, 10])));
+  else o.n = Math.max(2, Math.min(300, Math.round(o.n * pickOne(r, [0.6, 0.8, 1.25, 1.5])) || o.n + 1));
+  return c;
+}
+const strategyKey = (s) => JSON.stringify([s.entry, s.exit]);
+const familyKey = (s) => s.entry.map((c) => `${c.a.k}${c.op}${c.b.k}`).sort().join("+");
+function trainScore(res, conditions) {
+  const m = res.m;
+  if (!(m.trades >= 6) || !Number.isFinite(m.sharpe) || m.mdd < -0.6 || m.exposure < 0.05) return -Infinity;
+  const eq = res.equity; const daily = eq.map((v, i) => (i ? v / eq[i - 1] - 1 : 0)).slice(1);
+  const third = Math.floor(daily.length / 3);
+  const chunks = [0, 1, 2].map((k) => metrics(daily.slice(k * third, k === 2 ? daily.length : (k + 1) * third)).sharpe || 0);
+  const consistency = Math.min(...chunks);
+  return (0.4 * m.sharpe + 0.6 * consistency) * Math.min(1, m.trades / 15) - 0.05 * (conditions - 1);
+}
+function labOptions() { return { fee: Math.max(0, +$("#bt-fee").value || 0), slip: Math.max(0, +$("#bt-slip").value || 0), capital: 10000, short: false }; }
+function randomPercentile(b, from, to, exposure, avgHold, target, r, opt, sims = 300) {
+  const rets = []; for (let i = from + 1; i < to; i++) rets.push(b.c[i] / b.c[i - 1] - 1);
+  const cost = (opt.fee + opt.slip) / 10000; const pExit = 1 / Math.max(1, avgHold);
+  const pEnter = exposure >= 0.99 ? 1 : Math.min(1, (pExit * exposure) / Math.max(1e-6, 1 - exposure));
+  let below = 0;
+  for (let s = 0; s < sims; s++) {
+    let pos = 0, sum = 0, sum2 = 0;
+    for (let i = 0; i < rets.length; i++) { const prev = pos; pos = prev ? (r() < pExit ? 0 : 1) : r() < pEnter ? 1 : 0; const x = prev * rets[i] - Math.abs(pos - prev) * cost; sum += x; sum2 += x * x; }
+    const mean = sum / rets.length, sd = Math.sqrt(Math.max(0, sum2 / rets.length - mean * mean));
+    const sharpe = sd > 0 ? (mean / sd) * Math.sqrt(TD) : 0;
+    if (sharpe < target) below++;
+  }
+  return below / sims;
+}
+function labProgress(fraction, text) { $("#lab-bar").style.width = `${Math.round(fraction * 100)}%`; $("#lab-progress").textContent = text; }
+function renderLabForm() {
+  if (!lab.asset || !assets[lab.asset]) lab.asset = assets[state.bt.asset] ? state.bt.asset : symbols()[0];
+  $("#lab-asset").innerHTML = symbols().map((s) => `<option ${s === lab.asset ? "selected" : ""}>${esc(s)}</option>`).join("");
+  labWarning();
+  $("#lab-idea-hint").textContent = ai.engine ? "L'IA est chargée : elle traduira votre idée en règles, que la recherche améliorera ensuite." : "Si l'IA est chargée (plus bas), elle traduit votre idée et la recherche l'améliore. Sans elle, la recherche explore librement.";
+}
+function labWarning() {
+  const a = assets[$("#lab-asset").value]; const w = $("#lab-warning");
+  if (!a) { w.hidden = true; return; }
+  if (a.demo) { w.hidden = false; w.innerHTML = "<b>Données synthétiques.</b> Une stratégie trouvée ici n'a aucune valeur réelle : ces cours sont générés au hasard. Importez l'historique réel d'un actif (bouton + de l'onglet Marchés) pour une recherche utile."; }
+  else if (a.bars.c.length < 750) { w.hidden = false; w.innerHTML = `<b>Historique court (${a.bars.c.length} séances).</b> Avec moins de trois ans de données, les résultats sont peu fiables. Visez cinq ans ou plus.`; }
+  else w.hidden = true;
+}
+$("#lab-asset").addEventListener("change", (e) => { lab.asset = e.target.value; labWarning(); });
+$("#lab-depth").addEventListener("click", (e) => { const b = e.target.closest("[data-d]"); if (!b || lab.running) return; lab.depth = b.dataset.d; $$("#lab-depth button").forEach((x) => x.setAttribute("aria-pressed", x === b)); });
+$("#lab-run").addEventListener("click", () => runLab());
+
+async function runLab() {
+  if (lab.running) return;
+  const sym = $("#lab-asset").value; const b = assets[sym] && assets[sym].bars;
+  if (!b || b.c.length < 300) { toast("Il faut au moins 300 séances d'historique pour une recherche fiable.", true); return; }
+  lab.running = true; $("#lab-run").disabled = true; $("#lab-progress-wrap").hidden = false; $("#lab-results").innerHTML = "";
+  const started = performance.now(); const opt = labOptions(); const r = mulberry32((Date.now() % 2147483647) | 0);
+  const n = b.c.length; const split = Math.floor(n * 0.7); const budget = lab.depth === "deep" ? 1000 : 300;
+  const pool = [], seen = new Set(), scored = []; const notes = [];
+  const add = (s, origin, list = pool) => { const key = strategyKey(s); if (seen.has(key)) return false; seen.add(key); list.push({ entry: s.entry, exit: s.exit, origin }); return true; };
+  try {
+    const idea = $("#lab-idea").value.trim();
+    if (idea && ai.engine) {
+      labProgress(0.02, "L'IA traduit votre idée en règles…");
+      try {
+        const seed = aiSanitize(aiParseJson(await aiGenerate([{ role: "system", content: AI_SYSTEM }, { role: "user", content: idea }])));
+        add(seed, "ia"); for (let i = 0; i < budget * 0.25; i++) add(mutateStrategy(r, seed), "ia");
+        notes.push(`Idée de départ traduite par l'IA : ${ruleText(seed.entry, "ET")}.`);
+      } catch (err) { notes.push("L'IA n'a pas réussi à traduire l'idée : la recherche a exploré librement."); }
+    } else if (idea) notes.push("L'IA n'était pas chargée : l'idée de départ n'a pas été utilisée.");
+    while (pool.length < budget * 0.6) add(randomStrategy(r), "auto");
+    const trainBars = sliceBars(b, 0, split);
+    const evaluate = async (list, phase, base, span) => {
+      for (let i = 0; i < list.length; i++) {
+        const s = list[i]; const sig = runRulesCached(b, s);
+        const res = backtest(trainBars, sig.slice(0, split), opt); s.train = res.m; s.score = trainScore(res, s.entry.length + s.exit.length); scored.push(s);
+        if (i % 20 === 0) { labProgress(base + (span * i) / list.length, `${phase} : ${scored.length} stratégies testées`); await tick(); }
+      }
+    };
+    await evaluate(pool, "Exploration", 0.05, 0.5);
+    for (let g = 0; g < 2; g++) {
+      const parents = scored.filter((s) => s.score > -Infinity).sort((x, y) => y.score - x.score).slice(0, 15);
+      const kids = []; const perParent = Math.ceil((budget * 0.2) / Math.max(1, parents.length));
+      parents.forEach((p) => { let made = 0; for (let k = 0; k < perParent * 4 && made < perParent; k++) if (add(mutateStrategy(r, p), p.origin, kids)) made++; });
+      await evaluate(kids, `Amélioration ${g + 1}/2`, 0.55 + g * 0.15, 0.15);
+    }
+    labProgress(0.86, "Vérification sur la période jamais vue…"); await tick();
+    const ranked = scored.filter((s) => s.score > -Infinity).sort((x, y) => y.score - x.score);
+    const finalists = []; const families = {};
+    for (const s of ranked) { const f = familyKey(s); if ((families[f] || 0) >= 2) continue; families[f] = (families[f] || 0) + 1; finalists.push(s); if (finalists.length === 5) break; }
+    const testBars = sliceBars(b, split, n);
+    const others = symbols().filter((s) => s !== sym && assets[s].bars.c.length >= 300 && assets[s].demo === assets[sym].demo);
+    for (const [i, s] of finalists.entries()) {
+      const sig = runRulesCached(b, s);
+      const test = backtest(testBars, sig.slice(split), opt);
+      s.test = test.m; s.bhTest = test.bm; s.bhTrain = backtest(trainBars, sig.slice(0, split), opt).bm;
+      const holds = test.trades.map((t) => t.days); const avgHold = holds.length ? holds.reduce((a, x) => a + x, 0) / holds.length : 10;
+      s.luck = Number.isFinite(test.m.sharpe) ? randomPercentile(b, split, n, Math.max(test.m.exposure, 0.02), avgHold, test.m.sharpe, r, opt) : 0;
+      s.others = others.map((o) => { const ob = assets[o].bars, os = Math.floor(ob.c.length * 0.7); const res = backtest(sliceBars(ob, os, ob.c.length), runRulesCached(ob, s).slice(os), opt).m; return { sym: o, sharpe: res.sharpe }; });
+      s.full = backtest(b, sig, opt); s.split = split; s.sym = sym; s.id = `lab-${Date.now()}-${i}`; s.rank = i + 1;
+      s.verdict = labVerdict(s);
+      labProgress(0.86 + (0.14 * (i + 1)) / finalists.length, `Vérification ${i + 1}/${finalists.length}`); await tick();
+    }
+    lab.results = Object.fromEntries(finalists.map((s) => [s.id, s]));
+    renderLabResults(finalists, { tested: scored.length, seconds: (performance.now() - started) / 1000, notes, sym, b, split });
+  } catch (err) {
+    $("#lab-results").innerHTML = `<div class="cand"><b>La recherche a échoué.</b><span class="hint">${esc(err && err.message ? err.message : err)}</span></div>`;
+  } finally { lab.running = false; $("#lab-run").disabled = false; $("#lab-progress-wrap").hidden = true; }
+}
+function runRulesCached(b, s) {
+  const entry = s.entry.map((c) => cachedCond(b, c)); const exit = s.exit.map((c) => cachedCond(b, c));
+  if (!entry.length) return b.c.map(() => 0);
+  const enter = (i) => entry.every((e) => e[i]);
+  return latch(b.c.length, enter, exit.length ? (i) => exit.some((e) => e[i]) : (i) => !enter(i));
+}
+function labVerdict(s) {
+  const t = s.test; const othersOk = s.others.filter((o) => o.sharpe > 0).length;
+  const checks = [
+    { ok: t.sharpe > 0 && t.total > 0, text: `Gagnante sur la période jamais vue (rendement total ${pct(t.total, 1, true)})` },
+    { ok: t.sharpe >= (s.bhTest.sharpe || 0), text: `Meilleur rendement ajusté du risque que l'achat-conservation (Sharpe ${fr(t.sharpe)} contre ${fr(s.bhTest.sharpe)})` },
+    { ok: s.luck >= 0.9, text: `Fait mieux que ${pct(s.luck, 0)} des stratégies au hasard de même exposition` },
+    { ok: t.trades >= 3, text: `${t.trades} transaction${t.trades > 1 ? "s" : ""} sur la période vérifiée${t.trades < 3 ? " : trop peu pour conclure" : ""}` },
+  ];
+  if (s.others.length) checks.push({ ok: othersOk / s.others.length >= 0.5, text: `Gagnante sur ${othersOk} des ${s.others.length} autres actifs` });
+  const passed = checks.filter((c) => c.ok).length;
+  const level = !(t.sharpe > 0) ? "bad" : passed === checks.length ? "good" : passed >= checks.length - 1 && s.luck >= 0.8 ? "warn" : "bad";
+  return { level, checks, label: { good: "Prometteuse", warn: "Fragile", bad: "Rejetée" }[level] };
+}
+const shortDay = (iso) => iso.split("-").reverse().join("/");
+function renderLabResults(list, info) {
+  const good = list.filter((s) => s.verdict.level === "good").length;
+  const summary = `<div class="card"><h2>Résultat de la recherche</h2>
+    <p style="margin:0;font-size:15px"><b>${info.tested} stratégies testées en ${fr(info.seconds, 1)} s.</b> ${good ? `${good} ${good > 1 ? "semblent prometteuses" : "semble prometteuse"} après vérification.` : "Aucune n'a passé toutes les vérifications."}</p>
+    <p class="hint">Les finalistes doivent être régulières sur les trois tiers de la période de recherche, pas seulement bonnes en moyenne. Recherche sur ${shortDay(info.b.t[0])} → ${shortDay(info.b.t[info.split - 1])}, vérification sur ${shortDay(info.b.t[info.split])} → ${shortDay(info.b.t.at(-1))}. Les finalistes sont choisies sur la première période uniquement : la seconde sert d'examen.</p>
+    ${good ? "" : '<p class="hint">C\'est un résultat fréquent et utile : il évite de miser sur une stratégie qui ne tenait que par hasard. Essayez un autre actif, une recherche poussée ou une idée de départ.</p>'}
+    ${info.notes.map((t) => `<p class="hint">${esc(t)}</p>`).join("")}
+    <p class="hint">Rappel : même une stratégie prometteuse peut perdre à l'avenir. Plus on teste de stratégies, plus certaines paraissent bonnes par chance.</p></div>`;
+  $("#lab-results").innerHTML = summary + (list.length ? list.map(candidateCard).join("") : '<div class="empty">Aucune stratégie n\'a généré assez de transactions sur cet actif.</div>');
+  list.forEach((s) => drawCandidate(s));
+  $("#lab-results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function candidateCard(s) {
+  const row = (k, a, b2) => `<span>${k}</span><span>${a}</span><span>${b2}</span>`;
+  return `<div class="cand" id="${s.id}">
+    <div class="cand-head"><span class="t">Candidate n°${s.rank}${s.origin === "ia" ? '<span class="tag">idée IA</span>' : ""}</span><span class="verdict-pill ${s.verdict.level}">${s.verdict.label}</span></div>
+    <div class="rule"><b>Achat :</b> ${esc(ruleText(s.entry, "ET"))}<br><b>Vente :</b> ${s.exit.length ? esc(ruleText(s.exit, "OU")) : "fin des conditions d'achat"}</div>
+    <div class="compare">
+      <span class="h"></span><span class="h">Recherche</span><span class="h">Vérification</span>
+      ${row("Rendement annuel", `<span class="${cls(s.train.cagr)}">${pct(s.train.cagr, 1, true)}</span>`, `<span class="${cls(s.test.cagr)}">${pct(s.test.cagr, 1, true)}</span>`)}
+      ${row("Sharpe", fr(s.train.sharpe), fr(s.test.sharpe))}
+      ${row("Achat-conserv. (Sharpe)", fr(s.bhTrain.sharpe), fr(s.bhTest.sharpe))}
+      ${row("Drawdown max", pct(s.train.mdd), pct(s.test.mdd))}
+      ${row("Transactions", s.train.trades, s.test.trades)}
+    </div>
+    <div class="checks">${s.verdict.checks.map((c) => `<div><span class="${c.ok ? "ok" : "ko"}">${c.ok ? "✓" : "✗"}</span><span>${esc(c.text)}</span></div>`).join("")}</div>
+    <canvas class="chart sm" data-cand="${s.id}"></canvas>
+    <div class="ai-explain"></div>
+    <div class="btn-row"><button class="btn" data-lab-save="${s.id}">Enregistrer</button><button class="btn primary" data-lab-test="${s.id}">Voir le backtest</button></div>
+    ${ai.engine ? `<button class="btn ghost" data-lab-ai="${s.id}">Expliquer avec l'IA</button>` : ""}
+  </div>`;
+}
+function drawCandidate(s) {
+  const cv = document.querySelector(`[data-cand="${s.id}"]`); if (!cv) return;
+  const { x, w, h } = prep(cv); const eq = s.full.equity; const [lo, hi] = niceRange([...eq, ...s.full.benchEq]);
+  const f = frame(x, w, h, lo, hi, { dates: s.full.t, fmt: (v) => fr(v, 0) });
+  const sx = f.sx(s.split, eq.length);
+  x.fillStyle = css("--accent-soft"); x.fillRect(sx, 6, w - 52 - sx, h - 26);
+  x.fillStyle = css("--muted"); x.font = `600 10px ${css("--font-ui")}`; x.fillText("VÉRIFICATION", sx + 4, 16);
+  drawLine(x, s.full.benchEq, f.sx, f.sy, css("--blue"), 1.1);
+  drawLine(x, eq, f.sx, f.sy, css("--accent"), 1.7); endDot(x, eq, f.sx, f.sy, css("--accent"));
+}
+function labToStrategy(s) { return { id: s.id, name: `Labo ${s.sym.replace("DEMO-", "")} n°${s.rank}`, entry: JSON.parse(JSON.stringify(s.entry)), exit: JSON.parse(JSON.stringify(s.exit)) }; }
+$("#lab-results").addEventListener("click", async (e) => {
+  const t = e.target; const id = t.dataset.labSave || t.dataset.labTest || t.dataset.labAi; const s = id && lab.results[id]; if (!s) return;
+  if (t.dataset.labSave || t.dataset.labTest) {
+    const strat = labToStrategy(s);
+    if (!customStrats.some((x) => x.id === strat.id)) { customStrats.push(strat); saveStrats(); }
+    if (t.dataset.labSave) { toast(`« ${strat.name} » enregistrée dans Stratégies`); t.disabled = true; t.textContent = "Enregistrée"; return; }
+    state.bt.asset = s.sym; state.bt.strat = strat.id; go("backtest"); runBacktest(); return;
+  }
+  if (t.dataset.labAi && ai.engine && !ai.busy) {
+    const box = t.closest(".cand").querySelector(".ai-explain"); t.disabled = true; ai.busy = true; aiRefreshControls();
+    box.innerHTML = '<div class="ai-note"><span class="dots"><i></i><i></i><i></i></span></div>';
+    try {
+      const facts = `Règles d'achat : ${ruleText(s.entry, "ET")}. Règles de vente : ${s.exit.length ? ruleText(s.exit, "OU") : "fin des conditions d'achat"}. Période de recherche : rendement annuel ${pct(s.train.cagr)}, Sharpe ${fr(s.train.sharpe)}. Période de vérification : rendement annuel ${pct(s.test.cagr)}, Sharpe ${fr(s.test.sharpe)}, drawdown ${pct(s.test.mdd)}, ${s.test.trades} transactions ; achat-conservation Sharpe ${fr(s.bhTest.sharpe)}. Meilleure que ${pct(s.luck, 0)} des stratégies au hasard. Verdict : ${s.verdict.label}.`;
+      const reply = await ai.engine.chat.completions.create({ messages: [{ role: "system", content: "Tu es un analyste prudent. Réponds en français simple, en 4 phrases maximum, sans inventer de chiffres." }, { role: "user", content: `Explique à un investisseur débutant ce que fait cette stratégie, pourquoi elle a pu fonctionner, et la principale prudence à garder. ${facts}` }], temperature: 0.3, max_tokens: 260 });
+      box.innerHTML = `<div class="ai-note">${esc(reply.choices[0].message.content.trim())}</div>`;
+    } catch (err) { box.innerHTML = `<div class="ai-note">L'IA n'a pas pu répondre : ${esc(err && err.message ? err.message : err)}</div>`; t.disabled = false; }
+    finally { ai.busy = false; aiRefreshControls(); }
+  }
+});
+
 /* ============ Assistant IA (WebLLM, sur l'appareil) ============ */
 const WEBLLM_SRC = window.STRATLAB_WEBLLM || "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.86/+esm";
 const AI_MODELS = {
@@ -993,6 +1258,7 @@ async function aiWebGpu() {
   try { return await navigator.gpu.requestAdapter(); } catch { return null; }
 }
 async function renderAssistant() {
+  renderLabForm();
   aiRefreshControls();
   if (!$("#ai-chat").children.length) aiMessage("bot", `<span>Bonjour ! Décrivez la stratégie que vous voulez tester, par exemple avec les suggestions ci-dessous. Je la transforme en règles que vous pourrez backtester et modifier.</span>`);
   if (ai.engine) return;
@@ -1033,7 +1299,7 @@ $("#ai-load").addEventListener("click", async () => {
     aiState(`Prête · ${AI_MODELS[ai.choice].label}`, "ready");
     $("#ai-progress-wrap").hidden = true;
     $("#ai-intro").textContent = `Modèle ${AI_MODELS[ai.choice].label.toLowerCase()} chargé sur l'appareil. Il fonctionne désormais sans connexion.`;
-    toast("Assistant prêt");
+    toast("Assistant prêt"); renderLabForm();
   } catch (err) {
     ai.engine = null; aiState("Échec", "off"); $("#ai-progress-wrap").hidden = true;
     const blocked = /fetch|network|load|CSP|Content Security/i.test(String(err && err.message));
