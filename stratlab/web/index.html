@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StratégieLab</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/vendor/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">◆</span> StratégieLab <span class="badge">HORS LIGNE</span></div>
+  <nav class="tabs">
+    <button data-tab="data" class="active">Données</button>
+    <button data-tab="chart">Graphique</button>
+    <button data-tab="backtest">Backtest</button>
+    <button data-tab="portfolio">Portefeuille</button>
+    <button data-tab="assistant">Assistant IA</button>
+  </nav>
+  <div class="status" id="ai-status" title="Assistant IA local">IA : …</div>
+</header>
+
+<main>
+  <section id="tab-data" class="tab active">
+    <div class="grid two">
+      <div class="panel">
+        <h2>Actifs disponibles</h2>
+        <table class="table" id="symbols-table"><thead><tr><th>Symbole</th><th>Source</th><th>Barres</th><th>Début</th><th>Fin</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <h2>Importer un CSV</h2>
+          <p class="hint">Colonnes reconnues : Date, Open, High, Low, Close (ou Adj Close), Volume. Séparateur « , » ou « ; ».</p>
+          <form id="csv-form" class="form">
+            <label>Symbole<input name="symbol" required placeholder="ex. AIR.PA"></label>
+            <label>Fichier<input name="file" type="file" accept=".csv,text/csv" required></label>
+            <button class="primary">Importer</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Télécharger (si connecté)</h2>
+          <p class="hint">Téléchargement unique via Yahoo Finance (module optionnel <code>yfinance</code>), puis tout reste en cache local.</p>
+          <form id="download-form" class="form">
+            <label>Symbole<input name="symbol" required placeholder="ex. MSFT"></label>
+            <label>Période<select name="period"><option>1y</option><option>5y</option><option selected>10y</option><option>max</option></select></label>
+            <button>Télécharger</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Données de démonstration</h2>
+          <p class="hint">5 actifs synthétiques (DEMO-*) pour tester sans aucune donnée réelle.</p>
+          <button id="demo-btn">Régénérer les données démo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-chart" class="tab">
+    <div class="toolbar">
+      <select id="chart-symbol" class="symbol-select"></select>
+      <label class="check"><input type="checkbox" data-ind="sma20" checked> SMA 20</label>
+      <label class="check"><input type="checkbox" data-ind="sma50" checked> SMA 50</label>
+      <label class="check"><input type="checkbox" data-ind="sma200"> SMA 200</label>
+      <label class="check"><input type="checkbox" data-ind="bb"> Bollinger</label>
+      <span class="spacer"></span>
+      <span id="chart-quote" class="quote"></span>
+    </div>
+    <div class="panel chart-panel"><div id="price-chart" class="chart tall"></div></div>
+    <div class="grid two">
+      <div class="panel"><h3>RSI 14</h3><div id="rsi-chart" class="chart small"></div></div>
+      <div class="panel"><h3>MACD 12/26/9</h3><div id="macd-chart" class="chart small"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-backtest" class="tab">
+    <div class="grid sidebar">
+      <div class="panel">
+        <h2>Paramètres</h2>
+        <form id="bt-form" class="form">
+          <label>Actif<select id="bt-symbol" class="symbol-select" name="symbol"></select></label>
+          <label>Stratégie<select id="bt-strategy" name="strategy"></select></label>
+          <p class="hint" id="bt-description"></p>
+          <div id="bt-params" class="params"></div>
+          <div id="bt-code-wrap" hidden>
+            <label>Code Python<textarea id="bt-code" spellcheck="false" rows="16"></textarea></label>
+            <div class="row"><input id="bt-save-name" placeholder="Nom pour sauvegarder"><button type="button" id="bt-save">Sauvegarder</button></div>
+          </div>
+          <div class="row">
+            <label>Début<input type="date" name="start"></label>
+            <label>Fin<input type="date" name="end"></label>
+          </div>
+          <div class="row">
+            <label>Frais (pb)<input type="number" name="fee_bps" value="5" step="0.5" min="0"></label>
+            <label>Glissement (pb)<input type="number" name="slippage_bps" value="2" step="0.5" min="0"></label>
+          </div>
+          <label>Capital initial<input type="number" name="initial_capital" value="10000" min="1"></label>
+          <label class="check"><input type="checkbox" name="allow_short"> Autoriser la vente à découvert</label>
+          <button class="primary" id="bt-run">Lancer le backtest</button>
+        </form>
+      </div>
+      <div class="stack">
+        <div class="kpis" id="bt-kpis"><div class="empty">Choisis une stratégie et lance un backtest.</div></div>
+        <div class="panel"><h3>Courbe de capital <span class="legend"><i class="l-strat"></i>Stratégie <i class="l-bench"></i>Achat-conservation</span></h3><div id="equity-chart" class="chart"></div></div>
+        <div class="panel"><h3>Drawdown</h3><div id="dd-chart" class="chart small"></div></div>
+        <div class="grid two">
+          <div class="panel"><h3>Rendements mensuels</h3><div id="bt-monthly" class="scroll"></div></div>
+          <div class="panel"><h3>Transactions</h3><div id="bt-trades" class="scroll"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-portfolio" class="tab">
+    <div class="grid sidebar">
+      <div class="panel">
+        <h2>Composition</h2>
+        <p class="hint">Coche les actifs et ajuste les poids (normalisés automatiquement).</p>
+        <div id="pf-assets" class="params"></div>
+        <div class="row">
+          <label>Début<input type="date" id="pf-start"></label>
+          <label>Fin<input type="date" id="pf-end"></label>
+        </div>
+        <button class="primary" id="pf-run">Analyser</button>
+        <div id="pf-optimal"></div>
+      </div>
+      <div class="stack">
+        <div class="kpis" id="pf-kpis"><div class="empty">Sélectionne au moins deux actifs.</div></div>
+        <div class="grid two">
+          <div class="panel"><h3>Frontière efficiente <span class="legend">rendement / volatilité annualisés</span></h3><canvas id="frontier" class="canvas"></canvas></div>
+          <div class="panel"><h3>Corrélations</h3><div id="pf-corr" class="scroll"></div></div>
+        </div>
+        <div class="grid two">
+          <div class="panel"><h3>Valeur du portefeuille (base 1)</h3><div id="pf-chart" class="chart small"></div></div>
+          <div class="panel"><h3>Risque par actif</h3><div id="pf-assets-table" class="scroll"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-assistant" class="tab">
+    <div class="grid two">
+      <div class="panel">
+        <h2>Décris ta stratégie</h2>
+        <p class="hint" id="ai-help">L'assistant utilise un modèle local via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a> : rien ne quitte ta machine.</p>
+        <form id="ai-form" class="form">
+          <label>Modèle<select id="ai-model"></select></label>
+          <label>Demande<textarea id="ai-prompt" rows="6" placeholder="Ex. : Achète quand le RSI 2 jours passe sous 10 et que le cours est au-dessus de la moyenne 200 jours, revends quand il clôture au-dessus de la moyenne 5 jours."></textarea></label>
+          <label class="check"><input type="checkbox" id="ai-iterate"> Améliorer le code actuel plutôt que repartir de zéro</label>
+          <button class="primary" id="ai-run">Générer</button>
+        </form>
+        <div id="ai-answer" class="answer"></div>
+      </div>
+      <div class="panel">
+        <h2>Code généré</h2>
+        <textarea id="ai-code" spellcheck="false" rows="22"></textarea>
+        <div class="row">
+          <button id="ai-to-backtest" class="primary">Tester dans le backtest</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
