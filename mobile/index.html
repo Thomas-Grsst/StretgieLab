@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>window.STRATLAB_WEBLLM = "./vendor/web-llm.js"; window.STRATLAB_WORKER = "./llm-worker.js";</script>
 </head>
 <body>
 <title>StratégieLab Mobile</title>
@@ -60,8 +61,8 @@ main { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow
 @keyframes enter { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .screen.active { animation: none; } }
 
-.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
-.tabbar button { background: none; border: 0; height: var(--tabbar-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+.tabbar button { background: none; border: 0; height: var(--tabbar-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 10.5px; min-width: 0; padding: 0; font-weight: 600; }
 .tabbar svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar button[aria-current="page"] { color: var(--accent); }
 
@@ -131,6 +132,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
 .btn.ghost { background: none; }
 .btn.danger { color: var(--down); }
 .btn.block { width: 100%; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 details.more { border-top: 1px solid var(--line); padding-top: 10px; }
 details.more summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted); list-style: none; display: flex; justify-content: space-between; }
@@ -192,6 +194,30 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
 .toast { position: absolute; left: 16px; right: 16px; bottom: calc(var(--tabbar-h) + 14px + env(safe-area-inset-bottom, 0px)); background: var(--text); color: var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 600; z-index: 40; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .toast.error { background: var(--down); color: #fff; }
 .confirm { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--down-soft); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; }
+
+/* Assistant */
+.chat { display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 90%; padding: 10px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.msg.user { align-self: flex-end; background: var(--accent-soft); border: 1px solid var(--accent); border-bottom-right-radius: 5px; }
+.msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.msg.bot.error { border-color: var(--down); }
+.msg .rule { font-family: var(--font-num); font-size: 12.5px; color: var(--muted); background: var(--raised); border-radius: 10px; padding: 9px 10px; line-height: 1.55; }
+.msg .rule b { color: var(--text); font-family: var(--font-ui); font-weight: 700; }
+.msg .actions { display: flex; gap: 8px; }
+.msg .actions .btn { padding: 8px 12px; font-size: 13.5px; flex: 1; }
+.dots { display: inline-flex; gap: 4px; padding: 4px 0; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s; } .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dots i { animation: none; opacity: .7; } }
+.progress { height: 6px; background: var(--raised); border-radius: 3px; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.ai-state { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: none; padding: 3px 8px; border-radius: 99px; background: var(--raised); color: var(--muted); }
+.ai-state.ready { background: var(--up-soft); color: var(--up); }
+.ai-state.busy { background: var(--accent-soft); color: var(--accent); }
+.ai-state.off { background: var(--down-soft); color: var(--down); }
+.composer { display: flex; flex-direction: column; gap: 10px; }
+.composer textarea { width: 100%; min-width: 0; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; color: var(--text); font: inherit; font-size: 15px; resize: none; }
 </style>
 
 <div class="app" id="app">
@@ -321,6 +347,32 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
         </div>
       </div>
     </section>
+
+    <!-- Assistant -->
+    <section class="screen" id="screen-assistant">
+      <div class="card" id="ai-setup">
+        <h2>IA sur l'appareil <span class="ai-state" id="ai-state">Non chargée</span></h2>
+        <p class="hint" id="ai-intro">Décrivez une stratégie en français, l'assistant la traduit en règles d'achat et de vente que vous pouvez tester. Le modèle tourne dans le téléphone grâce à WebGPU : il est téléchargé une seule fois, puis fonctionne hors ligne et rien ne quitte l'appareil.</p>
+        <div class="seg" id="ai-model">
+          <button data-m="light" aria-pressed="true">Léger · ≈ 300 Mo</button>
+          <button data-m="precise" aria-pressed="false">Précis · ≈ 900 Mo</button>
+        </div>
+        <div id="ai-progress-wrap" hidden><div class="progress"><div id="ai-bar"></div></div><div class="hint num" id="ai-progress" style="margin-top:6px"></div></div>
+        <button class="btn primary block" id="ai-load">Télécharger le modèle</button>
+      </div>
+      <div class="chat" id="ai-chat"></div>
+      <div class="card composer">
+        <div class="chips" id="ai-suggest">
+          <button class="chip">Achète quand le RSI 14 passe sous 30, revends au-dessus de 60</button>
+          <button class="chip">Suis la tendance : SMA 50 au-dessus de la SMA 200</button>
+          <button class="chip">Cassure du plus haut 20 jours, sortie sous le plus bas 10 jours</button>
+          <button class="chip">Achète les replis : clôture sous la SMA 20 mais au-dessus de la SMA 200</button>
+        </div>
+        <label class="field" for="ai-input">Votre stratégie</label>
+        <textarea id="ai-input" rows="3" placeholder="Ex. : achète quand le MACD croise au-dessus de son signal et que la performance sur 60 jours est positive"></textarea>
+        <button class="btn primary block" id="ai-send" disabled>Générer la stratégie</button>
+      </div>
+    </section>
   </main>
 
   <nav class="tabbar" aria-label="Navigation principale">
@@ -328,6 +380,7 @@ details.more > div { display: flex; flex-direction: column; gap: 12px; margin-to
     <button data-tab="backtest"><svg viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l3-3 3 2 5-6"/><circle cx="18" cy="7" r="1"/></svg>Backtest</button>
     <button data-tab="portfolio"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>Portefeuille</button>
     <button data-tab="strategies"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>Stratégies</button>
+    <button data-tab="assistant"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Assistant</button>
   </nav>
 
   <div class="scrim" id="import-sheet" hidden>
@@ -630,7 +683,7 @@ const saveStrats = () => store.set("stratlab.strategies", customStrats);
 const symbols = () => Object.keys(assets);
 
 /* ============ Navigation ============ */
-const TITLES = { markets: "Marchés", backtest: "Backtest", portfolio: "Portefeuille", strategies: "Stratégies" };
+const TITLES = { markets: "Marchés", backtest: "Backtest", portfolio: "Portefeuille", strategies: "Stratégies", assistant: "Assistant" };
 function show(screen, title, back = false) {
   $$(".screen").forEach((s) => s.classList.toggle("active", s.id === `screen-${screen}`));
   $("#title").textContent = title; $("#back-btn").hidden = !back; $("#import-btn").hidden = screen !== "markets";
@@ -640,7 +693,7 @@ function go(tab) {
   state.tab = tab; state.detail = null;
   $$(".tabbar button").forEach((b) => (b.dataset.tab === tab ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
   show(tab, TITLES[tab]);
-  ({ markets: renderMarkets, backtest: renderBacktestForm, portfolio: renderPortfolio, strategies: renderStrategies })[tab]();
+  ({ markets: renderMarkets, backtest: renderBacktestForm, portfolio: renderPortfolio, strategies: renderStrategies, assistant: renderAssistant })[tab]();
 }
 $$(".tabbar button").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
 $("#back-btn").addEventListener("click", () => go(state.tab));
@@ -893,6 +946,155 @@ $("#st-save").addEventListener("click", () => {
   if (!ed.entry.length) { toast("Ajoutez au moins une condition d'achat.", true); return; }
   delete ed.example; const i = customStrats.findIndex((s) => s.id === ed.id); i >= 0 ? (customStrats[i] = ed) : customStrats.push(ed);
   saveStrats(); state.editing = null; state.bt.strat = ed.id; toast(`« ${ed.name} » enregistrée`); go("backtest"); runBacktest();
+});
+
+/* ============ Assistant IA (WebLLM, sur l'appareil) ============ */
+const WEBLLM_SRC = window.STRATLAB_WEBLLM || "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.86/+esm";
+const AI_MODELS = {
+  light: { f16: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", f32: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC", label: "Léger" },
+  precise: { f16: "Qwen2.5-1.5B-Instruct-q4f16_1-MLC", f32: "Qwen2.5-1.5B-Instruct-q4f32_1-MLC", label: "Précis" },
+};
+const ai = { choice: store.get("stratlab.aiModel", "light"), engine: null, loading: false, busy: false, history: [], webllm: null, modelId: null, last: null, results: {} };
+const OPERAND_KEYS = OPERANDS.map((o) => o.k);
+const AI_SCHEMA = (() => {
+  const operand = { type: "object", properties: { k: { type: "string", enum: OPERAND_KEYS }, n: { type: "number" } }, required: ["k", "n"] };
+  const cond = { type: "object", properties: { a: operand, op: { type: "string", enum: OPS.map((o) => o.k) }, b: operand }, required: ["a", "op", "b"] };
+  return JSON.stringify({ type: "object", properties: { name: { type: "string" }, explication: { type: "string" }, entry: { type: "array", items: cond }, exit: { type: "array", items: cond } }, required: ["name", "explication", "entry", "exit"] });
+})();
+const AI_SYSTEM = `Tu traduis une stratégie de trading décrite en français en règles JSON pour un moteur de backtest. Position uniquement acheteuse.
+Opérandes possibles (champ k) et sens du nombre n :
+- close : cours de clôture (n = 0)
+- sma : moyenne mobile simple sur n jours
+- ema : moyenne mobile exponentielle sur n jours
+- rsi : RSI sur n jours (valeur entre 0 et 100)
+- hi : plus haut des n jours précédents (pour les cassures à la hausse)
+- lo : plus bas des n jours précédents (pour les cassures à la baisse)
+- mom : performance en % sur n jours (ex. 5 signifie +5 %)
+- macd : ligne MACD 12/26 (n = 0)
+- macdsig : ligne de signal du MACD (n = 0)
+- value : nombre fixe, n = ce nombre (ex. 30 pour un seuil de RSI)
+Opérateurs (op) : lt = est inférieur à, gt = est supérieur à, xup = croise au-dessus de, xdn = croise en dessous de.
+entry = conditions d'achat, toutes vraies en même temps (ET). exit = conditions de vente, une seule suffit (OU). exit peut être vide : la position est alors fermée quand les conditions d'achat cessent d'être vraies.
+name = nom court de la stratégie (5 mots maximum). explication = une ou deux phrases simples en français qui expliquent la logique.
+Exemple. Demande : « achète quand le RSI 2 passe sous 10 si le cours est au-dessus de sa moyenne 200 jours, revends au-dessus de la moyenne 5 jours ».
+Réponse : {"name":"Rebond RSI 2 en tendance","explication":"On achète un repli très court terme dans une tendance haussière, puis on revend dès le rebond.","entry":[{"a":{"k":"rsi","n":2},"op":"lt","b":{"k":"value","n":10}},{"a":{"k":"close","n":0},"op":"gt","b":{"k":"sma","n":200}}],"exit":[{"a":{"k":"close","n":0},"op":"gt","b":{"k":"sma","n":5}}]}
+Réponds uniquement avec le JSON.`;
+
+function aiState(text, kind = "") { const s = $("#ai-state"); s.textContent = text; s.className = `ai-state ${kind}`; }
+function aiRefreshControls() {
+  $$("#ai-model button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.m === ai.choice));
+  $("#ai-send").disabled = !ai.engine || ai.busy;
+  $("#ai-load").hidden = !!ai.engine;
+  $("#ai-model").hidden = !!ai.engine || ai.loading;
+  $("#ai-load").disabled = ai.loading;
+}
+async function aiWebGpu() {
+  if (!navigator.gpu) return null;
+  try { return await navigator.gpu.requestAdapter(); } catch { return null; }
+}
+async function renderAssistant() {
+  aiRefreshControls();
+  if (!$("#ai-chat").children.length) aiMessage("bot", `<span>Bonjour ! Décrivez la stratégie que vous voulez tester, par exemple avec les suggestions ci-dessous. Je la transforme en règles que vous pourrez backtester et modifier.</span>`);
+  if (ai.engine) return;
+  const adapter = await aiWebGpu();
+  if (!adapter) {
+    aiState("Indisponible", "off");
+    $("#ai-load").disabled = true; $("#ai-model").hidden = true;
+    $("#ai-intro").innerHTML = `Ce navigateur ne donne pas accès à WebGPU, nécessaire pour faire tourner l'IA sur l'appareil. Utilisez un navigateur récent (Chrome sur Android, Safari à jour sur iPhone, Chrome ou Edge sur ordinateur). L'éditeur de stratégies reste disponible dans l'onglet Stratégies.`;
+    return;
+  }
+  ai.f16 = adapter.features.has("shader-f16");
+  try {
+    ai.webllm = ai.webllm || (await import(WEBLLM_SRC));
+    const cached = await ai.webllm.hasModelInCache(aiModelId());
+    $("#ai-load").textContent = cached ? "Charger le modèle (déjà téléchargé)" : "Télécharger le modèle";
+    if (!ai.loading) aiState(cached ? "Téléchargé" : "Non chargée");
+  } catch { /* le chargement réel affichera l'erreur */ }
+}
+const aiModelId = () => AI_MODELS[ai.choice][ai.f16 === false ? "f32" : "f16"];
+$("#ai-model").addEventListener("click", (e) => { const b = e.target.closest("[data-m]"); if (!b || ai.loading || ai.engine) return; ai.choice = b.dataset.m; store.set("stratlab.aiModel", ai.choice); renderAssistant(); });
+$("#ai-load").addEventListener("click", async () => {
+  if (ai.loading || ai.engine) return;
+  ai.loading = true; aiRefreshControls(); aiState("Chargement", "busy");
+  $("#ai-progress-wrap").hidden = false; $("#ai-progress").textContent = "Préparation…";
+  const started = Date.now();
+  const onProgress = (p) => {
+    const pctDone = Math.round((p.progress || 0) * 100); $("#ai-bar").style.width = `${pctDone}%`;
+    const secs = Math.round((Date.now() - started) / 1000);
+    $("#ai-progress").textContent = /fetch|download/i.test(p.text || "") && pctDone < 100 ? `Téléchargement du modèle : ${pctDone} % · ${secs} s` : /cache/i.test(p.text || "") && pctDone < 100 ? `Lecture depuis le stockage de l'appareil : ${pctDone} % · ${secs} s` : `Préparation sur la carte graphique… ${secs} s`;
+  };
+  try {
+    ai.webllm = ai.webllm || (await import(WEBLLM_SRC));
+    if (ai.f16 === undefined) { const a = await aiWebGpu(); ai.f16 = !!a && a.features.has("shader-f16"); }
+    ai.modelId = aiModelId();
+    ai.engine = window.STRATLAB_WORKER
+      ? await ai.webllm.CreateWebWorkerMLCEngine(new Worker(window.STRATLAB_WORKER, { type: "module" }), ai.modelId, { initProgressCallback: onProgress })
+      : await ai.webllm.CreateMLCEngine(ai.modelId, { initProgressCallback: onProgress });
+    aiState(`Prête · ${AI_MODELS[ai.choice].label}`, "ready");
+    $("#ai-progress-wrap").hidden = true;
+    $("#ai-intro").textContent = `Modèle ${AI_MODELS[ai.choice].label.toLowerCase()} chargé sur l'appareil. Il fonctionne désormais sans connexion.`;
+    toast("Assistant prêt");
+  } catch (err) {
+    ai.engine = null; aiState("Échec", "off"); $("#ai-progress-wrap").hidden = true;
+    const blocked = /fetch|network|load|CSP|Content Security/i.test(String(err && err.message));
+    $("#ai-intro").innerHTML = blocked
+      ? `Le modèle n'a pas pu être téléchargé. Vérifiez la connexion pour ce premier téléchargement. Dans l'aperçu claude.ai, les téléchargements externes sont bloqués : ouvrez la version installée de l'application (dossier <span class="num">mobile/</span> du dépôt, hébergé en HTTPS).`
+      : `Le modèle n'a pas pu démarrer : ${esc(err && err.message ? err.message : err)}. Essayez le modèle léger ou fermez d'autres onglets pour libérer de la mémoire.`;
+  } finally { ai.loading = false; aiRefreshControls(); }
+});
+
+function aiMessage(role, html, error = false) {
+  const div = document.createElement("div"); div.className = `msg ${role}${error ? " error" : ""}`; div.innerHTML = html;
+  $("#ai-chat").appendChild(div); div.scrollIntoView({ behavior: "smooth", block: "end" }); return div;
+}
+function aiSanitize(raw) {
+  const fixOperand = (o) => {
+    const k = OPERAND_KEYS.includes(o && o.k) ? o.k : "close"; let n = Number(o && o.n);
+    if (k === "value") n = Number.isFinite(n) ? n : 0;
+    else if (["close", "macd", "macdsig"].includes(k)) n = undefined;
+    else n = Math.min(400, Math.max(1, Math.round(Number.isFinite(n) && n > 0 ? n : OPERANDS.find((x) => x.k === k).n)));
+    return n === undefined ? { k } : { k, n };
+  };
+  const fixCond = (c) => ({ a: fixOperand(c.a), op: OPS.some((o) => o.k === c.op) ? c.op : "gt", b: fixOperand(c.b) });
+  const entry = (Array.isArray(raw.entry) ? raw.entry : []).slice(0, 5).map(fixCond);
+  const exit = (Array.isArray(raw.exit) ? raw.exit : []).slice(0, 5).map(fixCond);
+  if (!entry.length) throw new Error("La réponse ne contient aucune condition d'achat.");
+  return { id: `ai-${Date.now()}`, name: String(raw.name || "Stratégie IA").trim().slice(0, 40) || "Stratégie IA", explication: String(raw.explication || "").slice(0, 400), entry, exit };
+}
+async function aiSend(text) {
+  text = text.trim(); if (!text || !ai.engine || ai.busy) return;
+  ai.busy = true; aiRefreshControls(); $("#ai-input").value = "";
+  aiMessage("user", esc(text));
+  const pending = aiMessage("bot", `<span class="dots"><i></i><i></i><i></i></span>`);
+  try {
+    const messages = [{ role: "system", content: AI_SYSTEM }, ...ai.history.slice(-4), { role: "user", content: text }];
+    const reply = await ai.engine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 700, response_format: { type: "json_object", schema: AI_SCHEMA } });
+    const content = reply.choices[0].message.content || "";
+    const strat = aiSanitize(JSON.parse(content));
+    ai.history.push({ role: "user", content: text }, { role: "assistant", content });
+    ai.results[strat.id] = strat;
+    if (!assets[state.bt.asset]) state.bt.asset = symbols()[0];
+    const bars = assets[state.bt.asset].bars;
+    const m = backtest(bars, runRules(bars, strat), { fee: 5, slip: 2, capital: 10000, short: false }).m;
+    pending.innerHTML = `<b>${esc(strat.name)}</b>${strat.explication ? `<span>${esc(strat.explication)}</span>` : ""}
+      <div class="rule"><b>Achat :</b> ${esc(ruleText(strat.entry, "ET"))}<br><b>Vente :</b> ${strat.exit.length ? esc(ruleText(strat.exit, "OU")) : "fin des conditions d'achat"}</div>
+      <span class="hint num">Aperçu sur ${esc(state.bt.asset)} : ${pct(m.total, 1, true)} · Sharpe ${fr(m.sharpe)} · ${m.trades} transactions</span>
+      <div class="actions"><button class="btn" data-ai-edit="${strat.id}">Modifier</button><button class="btn primary" data-ai-test="${strat.id}">Enregistrer et tester</button></div>`;
+  } catch (err) {
+    pending.classList.add("error");
+    pending.innerHTML = `<span>Je n'ai pas réussi à traduire cette demande en règles (${esc(err && err.message ? err.message : err)}). Reformulez avec des indicateurs précis : RSI, moyennes mobiles, MACD, plus haut ou plus bas sur N jours, performance sur N jours.</span>`;
+  } finally { ai.busy = false; aiRefreshControls(); }
+}
+$("#ai-send").addEventListener("click", () => aiSend($("#ai-input").value));
+$("#ai-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(pointer: fine)").matches) { e.preventDefault(); aiSend($("#ai-input").value); } });
+$("#ai-suggest").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c) return; $("#ai-input").value = c.textContent; if (ai.engine) aiSend(c.textContent); else $("#ai-input").focus(); });
+$("#ai-chat").addEventListener("click", (e) => {
+  const id = e.target.dataset.aiTest || e.target.dataset.aiEdit; if (!id) return; const s = ai.results[id]; if (!s) return;
+  const copy = { id: s.id, name: s.name, entry: JSON.parse(JSON.stringify(s.entry)), exit: JSON.parse(JSON.stringify(s.exit)) };
+  if (e.target.dataset.aiTest) {
+    if (!customStrats.some((x) => x.id === copy.id)) customStrats.push(copy); saveStrats();
+    state.bt.strat = copy.id; toast(`« ${copy.name} » enregistrée`); go("backtest"); runBacktest();
+  } else { state.editing = copy; go("strategies"); $("#st-editor").scrollIntoView({ behavior: "smooth" }); }
 });
 
 /* ============ Import ============ */

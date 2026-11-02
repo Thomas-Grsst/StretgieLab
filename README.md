@@ -27,6 +27,13 @@ données démo générées sur l'appareil, import CSV, graphiques, backtests (6 
 de règles « acheter quand… / vendre quand… »), portefeuille avec frontière efficiente. Tout est stocké localement
 dans le navigateur.
 
+L'onglet **Assistant** traduit une stratégie décrite en français en règles testables. Le modèle de langage
+(Qwen2.5 0,5B « léger », environ 300 Mo, ou 1,5B « précis », environ 900 Mo) tourne directement dans le navigateur
+grâce à [WebLLM](https://github.com/mlc-ai/web-llm) et WebGPU : il est téléchargé une fois, mis en cache sur
+l'appareil, puis fonctionne hors ligne. Sa réponse est contrainte par un schéma JSON, puis validée avant d'être
+proposée. Il faut un navigateur avec WebGPU (Chrome Android, Safari iOS récent, Chrome ou Edge sur ordinateur).
+WebLLM (Apache-2.0) est embarqué dans `mobile/vendor/`.
+
 Pour l'installer sur un téléphone, il suffit d'héberger le dossier `mobile/` en HTTPS (GitHub Pages par exemple),
 de l'ouvrir puis « Ajouter à l'écran d'accueil ». Après la première ouverture, l'application fonctionne hors ligne.
 
