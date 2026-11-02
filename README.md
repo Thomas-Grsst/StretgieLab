@@ -20,6 +20,18 @@ Inspiré de deux projets open source, sans en reprendre le code :
 | **Portefeuille** | CAGR, volatilité, Sharpe/Sortino, VaR historique et paramétrique, CVaR, contributions au risque, corrélations, frontière efficiente avec portefeuilles Sharpe max / volatilité min applicables en un clic. |
 | **Assistant IA** | Décris une stratégie en français, un modèle local via [Ollama](https://ollama.com) écrit le code, que tu testes directement dans le backtest. |
 
+## Version mobile (PWA)
+
+Le dossier `mobile/` contient une version téléphone autonome, en HTML/CSS/JavaScript, sans serveur Python :
+données démo générées sur l'appareil, import CSV, graphiques, backtests (6 stratégies intégrées et un éditeur
+de règles « acheter quand… / vendre quand… »), portefeuille avec frontière efficiente. Tout est stocké localement
+dans le navigateur.
+
+Pour l'installer sur un téléphone, il suffit d'héberger le dossier `mobile/` en HTTPS (GitHub Pages par exemple),
+de l'ouvrir puis « Ajouter à l'écran d'accueil ». Après la première ouverture, l'application fonctionne hors ligne.
+
+![Mobile](docs/screenshots/mobile-3-backtest.png)
+
 ## Installation
 
 Python 3.11 ou plus.
