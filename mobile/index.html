@@ -1061,6 +1061,31 @@ function aiSanitize(raw) {
   if (!entry.length) throw new Error("La réponse ne contient aucune condition d'achat.");
   return { id: `ai-${Date.now()}`, name: String(raw.name || "Stratégie IA").trim().slice(0, 40) || "Stratégie IA", explication: String(raw.explication || "").slice(0, 400), entry, exit };
 }
+async function aiGenerate(messages) {
+  if (!ai.plainOnly && !window.STRATLAB_AI_PLAIN) {
+    try {
+      const reply = await ai.engine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 700, response_format: { type: "json_object", schema: AI_SCHEMA } });
+      return reply.choices[0].message.content || "";
+    } catch (err) {
+      ai.plainOnly = true;
+      try { await ai.engine.resetChat(); } catch {}
+    }
+  }
+  const reply = await ai.engine.chat.completions.create({ messages, temperature: 0.1, max_tokens: 700 });
+  return reply.choices[0].message.content || "";
+}
+function aiParseJson(content) {
+  const text = content.replace(/```(?:json)?/gi, "");
+  const start = text.indexOf("{");
+  if (start < 0) throw new Error("aucun JSON dans la réponse");
+  let depth = 0, inString = false, escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) { if (escaped) escaped = false; else if (ch === "\\") escaped = true; else if (ch === '"') inString = false; continue; }
+    if (ch === '"') inString = true; else if (ch === "{") depth++; else if (ch === "}" && --depth === 0) return JSON.parse(text.slice(start, i + 1));
+  }
+  throw new Error("JSON incomplet dans la réponse");
+}
 async function aiSend(text) {
   text = text.trim(); if (!text || !ai.engine || ai.busy) return;
   ai.busy = true; aiRefreshControls(); $("#ai-input").value = "";
@@ -1068,9 +1093,8 @@ async function aiSend(text) {
   const pending = aiMessage("bot", `<span class="dots"><i></i><i></i><i></i></span>`);
   try {
     const messages = [{ role: "system", content: AI_SYSTEM }, ...ai.history.slice(-4), { role: "user", content: text }];
-    const reply = await ai.engine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 700, response_format: { type: "json_object", schema: AI_SCHEMA } });
-    const content = reply.choices[0].message.content || "";
-    const strat = aiSanitize(JSON.parse(content));
+    const content = await aiGenerate(messages);
+    const strat = aiSanitize(aiParseJson(content));
     ai.history.push({ role: "user", content: text }, { role: "assistant", content });
     ai.results[strat.id] = strat;
     if (!assets[state.bt.asset]) state.bt.asset = symbols()[0];
